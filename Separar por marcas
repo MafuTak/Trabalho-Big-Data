@@ -1,0 +1,50 @@
+!pip install pandas openpyxl
+from google.colab import files
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+
+# Carregando a planilha
+file_path = list(uploaded.keys())[0]
+df = pd.read_excel(file_path)
+
+# Convertendo todos os valores da coluna 'Produto' para letras minúsculas
+df['Produto'] = df['Produto'].str.lower()
+
+# Função para identificar a marca com base no nome do produto
+def identificar_marca(produto):
+    if 'iphone' in produto:
+        return 'iphone'
+    elif 'samsung' in produto:
+        return 'samsung'
+    elif 'motorola' in produto:
+        return 'motorola'
+    else:
+        return 'sem marca'
+
+# Aplicando a função para criar uma nova coluna 'Marca'
+df['Marca'] = df['Produto'].apply(identificar_marca)
+
+# Separando os produtos por marca e salvando em planilhas Excel
+for marca in df['Marca'].unique():
+    filtered_df = df[df['Marca'] == marca]
+    if not filtered_df.empty:
+        # Criando um novo arquivo Excel
+        wb = Workbook()
+        ws = wb.active
+        
+        # Adicionando os dados ao arquivo Excel
+        for r in dataframe_to_rows(filtered_df, index=False, header=True):
+            ws.append(r)
+        
+        # Mantendo o formato contábil para as colunas de valores em reais
+        for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=4):  # Colunas B, C e D
+            for cell in row:
+                cell.number_format = '"R$"#,##0.00_);[Red]("R$"#,##0.00)'
+        
+        # Salvando o arquivo Excel
+        if marca == 'sem marca':
+            ws.delete_cols(5)
+            wb.save('produtos_sem_marca.xlsx')
+        else:
+            wb.save(f'produtos_{marca}.xlsx')
