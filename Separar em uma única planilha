@@ -1,0 +1,48 @@
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+
+arquivo = 'Vendas.xlsx'
+df = pd.read_excel(arquivo)
+
+df['Produto'] = df['Produto'].str.lower()
+
+def achar_marca(produto):
+  if 'iphone' in produto:
+    return 'iphone'
+  
+  elif 'samsung' in produto:
+    return 'samsung'
+
+  elif 'motorola' in produto:
+    return 'motorola'
+
+  else:
+    return 'outros'
+
+df['Marca'] = df['Produto'].apply(achar_marca)
+
+wb = Workbook()
+ws = wb.active
+ws.tittle = "Produtos por Marcas"
+
+marcas = ['iphone', 'samsung', 'motorola', 'outros']
+current_row = 1
+
+for marca in marcas:
+  filtered_df = df[df['Marca'] == marca]
+  if not filtered_df.empty:
+    ws.cell(row=current_row, column=1, value=marca.upper())
+    current_row += 1
+
+  for r in dataframe_to_rows(filtered_df, index=False, header=True):
+    ws.append(r)
+    current_row += 1
+
+  current_row += 1
+
+for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=4):
+  for cell in row:
+    cell.number_format = '"R$"#,##0.00_);[Red]("R$"#,##0.00)'
+
+wb.save('produtos_separados.xlsx')
